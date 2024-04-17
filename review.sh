@@ -1,3 +1,4 @@
+export GITTUF_DEV=1
 gittuf rsl remote pull origin
 git fetch origin feature:feature
 git checkout feature
