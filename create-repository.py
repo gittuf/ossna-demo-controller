@@ -74,7 +74,7 @@ def main(location="../ossna-demo"):
             "--rule-pattern",
             "git:refs/heads/main",
             "--authorize-key",
-            f"fulcio:{GITSIGN_IDENTITY}::https://github.com/login/oauth",
+            f"{os.path.join(keys_dir, 'billy.pem')}",
             "--authorize-key",
             f"{os.path.join(keys_dir, 'aditya.pem')}",
             "--threshold",
@@ -172,7 +172,7 @@ def _set_aditya(keys_dir):
         sys.exit(1)
 
     result = subprocess.run(
-        ["git", "config", "--local", "user.email", "aditya@saky.in"]
+        ["git", "config", "--local", "user.email", "aditya@example.com"]
     )
     if result.returncode != 0:
         print("Unable to set Git config")
@@ -185,12 +185,15 @@ def _set_billy(keys_dir):
         print("Unable to set Git config")
         sys.exit(1)
 
-    result = subprocess.run(["git", "config", "--local", "gpg.format", "x509"])
-    if result.returncode != 0:
-        print("Unable to set Git config")
-        sys.exit(1)
-
-    result = subprocess.run(["git", "config", "--local", "gpg.x509.program", "gitsign"])
+    result = subprocess.run(
+        [
+            "git",
+            "config",
+            "--local",
+            "user.signingkey",
+            f"{os.path.join(keys_dir, 'billy')}",
+        ]
+    )
     if result.returncode != 0:
         print("Unable to set Git config")
         sys.exit(1)
@@ -201,7 +204,7 @@ def _set_billy(keys_dir):
         sys.exit(1)
 
     result = subprocess.run(
-        ["git", "config", "--local", "user.email", "billy@chainguard.dev"]
+        ["git", "config", "--local", "user.email", "billy@example.com"]
     )
     if result.returncode != 0:
         print("Unable to set Git config")
