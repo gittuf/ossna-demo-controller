@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import click
 import os
 import pathlib
 import subprocess
@@ -8,10 +7,7 @@ import sys
 
 GITSIGN_IDENTITY = "billy@chainguard.dev"
 
-
-@click.command()
-@click.option("--location", required=True, help="Location to create demo repository")
-def main(location):
+def main(location="../ossna-demo"):
     os.environ["GITTUF_DEV"] = "1"
 
     with open("verify-workflow.yml") as fp:
