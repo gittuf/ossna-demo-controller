@@ -14,5 +14,5 @@ jobs:
       - name: Checkout and verify repository
         run: |
           gittuf clone https://github.com/${{ github.repository }}
-          cd ci-demo
+          cd ossna-demo
           gittuf verify-ref main

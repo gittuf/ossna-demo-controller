@@ -6,8 +6,7 @@ import pathlib
 import subprocess
 import sys
 
-# GITSIGN_IDENTITY = "billy@chainguard.dev"
-GITSIGN_IDENTITY = "aditya@saky.in"
+GITSIGN_IDENTITY = "billy@chainguard.dev"
 
 
 @click.command()
