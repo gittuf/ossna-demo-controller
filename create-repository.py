@@ -6,6 +6,9 @@ import pathlib
 import subprocess
 import sys
 
+# GITSIGN_IDENTITY = "billy@chainguard.dev"
+GITSIGN_IDENTITY = "aditya@saky.in"
+
 
 @click.command()
 @click.option("--location", required=True, help="Location to create demo repository")
@@ -31,35 +34,7 @@ def main(location):
         print("Unable to create Git repository in specified location")
         sys.exit(1)
 
-    result = subprocess.run(["git", "config", "--local", "user.name", "Aditya Sirish"])
-    if result.returncode != 0:
-        print("Unable to set Git config")
-        sys.exit(1)
-
-    result = subprocess.run(
-        ["git", "config", "--local", "user.email", "aditya@saky.in"]
-    )
-    if result.returncode != 0:
-        print("Unable to set Git config")
-        sys.exit(1)
-
-    result = subprocess.run(["git", "config", "--local", "gpg.format", "ssh"])
-    if result.returncode != 0:
-        print("Unable to set Git config")
-        sys.exit(1)
-
-    result = subprocess.run(
-        [
-            "git",
-            "config",
-            "--local",
-            "user.signingkey",
-            f"{os.path.join(keys_dir, 'ossna-1')}",
-        ]
-    )
-    if result.returncode != 0:
-        print("Unable to set Git config")
-        sys.exit(1)
+    _set_root(keys_dir)
 
     result = subprocess.run(
         ["gittuf", "trust", "init", "-k", f"{os.path.join(keys_dir, 'root')}"]
@@ -76,12 +51,14 @@ def main(location):
             "-k",
             f"{os.path.join(keys_dir, 'root')}",
             "--policy-key",
-            f"{os.path.join(keys_dir, 'targets.pub')}",
+            f"{os.path.join(keys_dir, 'targets.pem')}",
         ]
     )
     if result.returncode != 0:
         print("Unable to add policy key to gittuf root of trust")
         sys.exit(1)
+
+    _set_targets(keys_dir)
 
     result = subprocess.run(
         ["gittuf", "policy", "init", "-k", f"{os.path.join(keys_dir, 'targets')}"]
@@ -102,9 +79,9 @@ def main(location):
             "--rule-pattern",
             "git:refs/heads/main",
             "--authorize-key",
-            f"{os.path.join(keys_dir, 'ossna-1.pem')}",
+            f"fulcio:{GITSIGN_IDENTITY}::https://github.com/login/oauth",
             "--authorize-key",
-            f"{os.path.join(keys_dir, 'ossna-2.pem')}",
+            f"{os.path.join(keys_dir, 'aditya.pem')}",
             "--threshold",
             "2",
         ]
@@ -112,6 +89,8 @@ def main(location):
     if result.returncode != 0:
         print("Unable to add main branch protection rule")
         sys.exit(1)
+
+    _set_billy(keys_dir)
 
     result = subprocess.run(["git", "checkout", "-b", "feature"])
     if result.returncode != 0:
@@ -137,6 +116,8 @@ def main(location):
         print("Unable to create RSL entry")
         sys.exit(1)
 
+    _set_aditya(keys_dir)
+
     result = subprocess.run(
         [
             "gittuf",
@@ -145,7 +126,7 @@ def main(location):
             "--from-ref",
             "refs/heads/feature",
             "--signing-key",
-            f"{os.path.join(keys_dir, 'ossna-2')}",
+            f"{os.path.join(keys_dir, 'aditya')}",
             "refs/heads/main",
         ]
     )
@@ -158,6 +139,8 @@ def main(location):
         print("Unable to checkout main branch")
         sys.exit(1)
 
+    _set_billy(keys_dir)
+
     result = subprocess.run(["gittuf", "rsl", "record", "main"])
     if result.returncode != 0:
         print("Unable to create RSL entry")
@@ -166,6 +149,131 @@ def main(location):
     result = subprocess.run(["gittuf", "verify-ref", "main", "--verbose"])
     if result.returncode != 0:
         print("gittuf verification failed")
+        sys.exit(1)
+
+
+def _set_aditya(keys_dir):
+    result = subprocess.run(["git", "config", "--local", "gpg.format", "ssh"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(
+        [
+            "git",
+            "config",
+            "--local",
+            "user.signingkey",
+            f"{os.path.join(keys_dir, 'aditya')}",
+        ]
+    )
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(["git", "config", "--local", "user.name", "Aditya Sirish"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(
+        ["git", "config", "--local", "user.email", "aditya@saky.in"]
+    )
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+
+def _set_billy(keys_dir):
+    result = subprocess.run(["git", "config", "--local", "gpg.format", "ssh"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(["git", "config", "--local", "gpg.format", "x509"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(["git", "config", "--local", "gpg.x509.program", "gitsign"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(["git", "config", "--local", "user.name", "Billy Lynch"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(
+        ["git", "config", "--local", "user.email", "billy@chainguard.dev"]
+    )
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+
+def _set_root(keys_dir):
+    result = subprocess.run(["git", "config", "--local", "gpg.format", "ssh"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(
+        [
+            "git",
+            "config",
+            "--local",
+            "user.signingkey",
+            f"{os.path.join(keys_dir, 'root')}",
+        ]
+    )
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(["git", "config", "--local", "user.name", "Root"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(
+        ["git", "config", "--local", "user.email", "root-ossna-demo@saky.in"]
+    )
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+
+def _set_targets(keys_dir):
+    result = subprocess.run(["git", "config", "--local", "gpg.format", "ssh"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(
+        [
+            "git",
+            "config",
+            "--local",
+            "user.signingkey",
+            f"{os.path.join(keys_dir, 'targets')}",
+        ]
+    )
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(["git", "config", "--local", "user.name", "Policy"])
+    if result.returncode != 0:
+        print("Unable to set Git config")
+        sys.exit(1)
+
+    result = subprocess.run(
+        ["git", "config", "--local", "user.email", "targets-ossna-demo@saky.in"]
+    )
+    if result.returncode != 0:
+        print("Unable to set Git config")
         sys.exit(1)
 
 
